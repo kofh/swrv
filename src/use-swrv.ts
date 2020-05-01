@@ -1,6 +1,8 @@
-import { reactive,
+import {
+  reactive,
   watch,
   ref,
+  isRef,
   toRefs,
   onMounted,
   onUnmounted,
@@ -24,13 +26,13 @@ const defaultConfig: IConfig = {
   dedupingInterval: 2000,
   revalidateOnFocus: true,
   revalidateDebounce: 0,
-  onError: (_, __) => {}
+  onError: (_, __) => { }
 }
 
 /**
  * Cache the refs for later revalidation
  */
-function setRefCache (key, theRef, ttl) {
+function setRefCache(key, theRef, ttl) {
   const refCacheItem = REF_CACHE.get(key, ttl)
   if (refCacheItem) {
     refCacheItem.data.push(theRef)
@@ -101,7 +103,7 @@ type StateRef<Data, Error> = { data: Data, error: Error, isValidating: boolean, 
 /**
  * Stale-While-Revalidate hook to handle fetching, caching, validation, and more...
  */
-export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
+export default function useSWRV<Data = any, Error = any>(key: IKey, fn: fetcherFn<Data>, config?: IConfig): IResponse<Data, Error> {
   let unmounted = false
   let isHydrated = false
 
@@ -131,7 +133,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
     const swrvKey = +(vm as any).$vnode.elm.dataset.swrvKey
     if (swrvKey) {
       const nodeState = swrvState[swrvKey] || []
-      const instanceState = nodeState[keyRef.value]
+      const instanceState = nodeState[isRef(keyRef) ? keyRef.value : keyRef()]
       if (instanceState) {
         stateRef = reactive(instanceState)
         isHydrated = true
@@ -300,7 +302,7 @@ export default function useSWRV<Data = any, Error = any> (key: IKey, fn: fetcher
   } as IResponse<Data, Error>
 }
 
-function isPromise<T> (p: any): p is Promise<T> {
+function isPromise<T>(p: any): p is Promise<T> {
   return p !== null && typeof p === 'object' && typeof p.then === 'function'
 }
 
